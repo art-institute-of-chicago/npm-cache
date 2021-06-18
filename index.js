@@ -72,6 +72,11 @@ var main = function () {
     abbr: 'o',
     help: 'cleaning automatically old cached deps - enter a number of days to clean cached deps not used since more than x days',
   });
+  parser.option('keepItems', {
+    default: null,
+    abbr: 'n',
+    help: 'keep only this many cached deps for this package manager to save disk space'
+  });
 
   parser.option('version', {
     abbr: 'v',
@@ -137,6 +142,7 @@ var installDependencies = function (opts) {
       var managerConfig = require(availableManagers[managerName]);
       managerConfig.cacheDirectory = opts.cacheDirectory;
       managerConfig.forceRefresh = opts.forceRefresh;
+      managerConfig.keepItems = opts.keepItems;
       managerConfig.noArchive = opts.noArchive || opts.useSymlink;
       managerConfig.useSymlink = opts.useSymlink;
       managerConfig.reverseSymlink = opts.reverseSymlink;

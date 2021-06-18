@@ -11,6 +11,7 @@ var md5 = require('../util/md5');
 var tmp = require('tmp');
 var _ = require('lodash');
 var zlib = require('zlib');
+var rimraf = require('rimraf');
 
 var cacheVersion = '1';
 
@@ -44,6 +45,46 @@ CacheDependencyManager.prototype.cacheLogError = function (error) {
   logger.logError('[' + this.config.cliName + '] ' + error);
 };
 
+CacheDependencyManager.prototype.purgeOldCacheItems = function (directory, keepCount) {
+  var self = this;
+  var snapshotsToRemove = fs
+    .readdirSync(directory)
+    .map(
+      function (fileName) {
+        return path.join(directory, fileName);
+      }
+    )
+    .map(
+      function (filePath) {
+        return {
+          path: filePath,
+          time: fs.statSync(filePath).ctime.getTime(),
+        }
+      }
+    )
+    .sort(
+      function (a, b) {
+        return a.time - b.time;
+      }
+    )
+    .reverse()
+    .slice(Math.max(0, keepCount - 1))
+    .map(
+      function (fileMapping) {
+        return fileMapping.path;
+      }
+    );
+
+  snapshotsToRemove
+    .forEach(
+      function (filePath) {
+        self.cacheLogInfo('cleaning ' + filePath);
+        rimraf.sync(filePath);
+      }
+    );
+
+  this.cacheLogInfo('removed ' + snapshotsToRemove.length + ' file(s) from cache directory');
+};
 
 CacheDependencyManager.prototype.installDependencies = function () {
   var error = null;
@@ -302,6 +343,11 @@ CacheDependencyManager.prototype.loadDependencies = function (callback) {
   var cacheDirectory = path.resolve(this.config.cacheDirectory, this.config.cliName, this.config.getCliVersion());
   var cachePathArchive = path.resolve(cacheDirectory, hash + '.tar.gz');
   var cachePathNotArchived = path.resolve(cacheDirectory, hash);
+
+  // Remove cached dependencies if there are too many
+  if (null !== this.config.keepItems) {
+    this.purgeOldCacheItems(cacheDirectory, this.config.keepItems);
+  }
 
   // Check if local cache of dependencies exists
   var cacheArchiveExists = fs.existsSync(cachePathArchive);
