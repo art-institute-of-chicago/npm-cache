@@ -46,6 +46,11 @@ CacheDependencyManager.prototype.cacheLogError = function (error) {
 };
 
 CacheDependencyManager.prototype.purgeOldCacheItems = function (directory, keepCount) {
+  if (!fs.existsSync(directory)) {
+    this.cacheLogInfo('cache directory does not exist; nothing to clean');
+    return;
+  }
+
   var self = this;
   var snapshotsToRemove = fs
     .readdirSync(directory)
