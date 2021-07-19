@@ -50,7 +50,12 @@ var main = function () {
   });
   parser.option('noArchive', {
     abbr: 'd',
-    help: 'when installing a new dependency set, those dependencies will be stored uncompressed. This requires more disk space but notably increases performance',
+    help: 'when installing a new dependency set, those dependencies will be stored untarred. This requires more disk space but may increase performance',
+    flag: true
+  });
+  parser.option('noCompress', {
+    abbr: 'd',
+    help: 'when installing a new dependency set, those dependencies will be stored tarred, but uncompressed. This requires more disk space but notably increases performance',
     flag: true
   });
   parser.option('ci', {
@@ -144,6 +149,7 @@ var installDependencies = function (opts) {
       managerConfig.forceRefresh = opts.forceRefresh;
       managerConfig.keepItems = opts.keepItems;
       managerConfig.noArchive = opts.noArchive || opts.useSymlink;
+      managerConfig.noCompress = opts.noCompress;
       managerConfig.useSymlink = opts.useSymlink;
       managerConfig.reverseSymlink = opts.reverseSymlink;
       managerConfig.installOptions = managerArguments[managerName];
@@ -209,7 +215,7 @@ var cachedFileListHelper = function (dir, fileList, regex, currDepth, maxDepth) 
 
 // Returns list of candidate cached files
 var getCachedFileList = function (baseDir) {
-  var cacheRegex = /[0-9a-f]{32}[\.tar\.gz]*$/i;
+  var cacheRegex = /[0-9a-f]{32}[\.tar]*[\.gz]*$/i;
   return cachedFileListHelper(baseDir, [], cacheRegex, 0, 3);
 };
 

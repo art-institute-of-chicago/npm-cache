@@ -28,6 +28,9 @@ Upon installing cached dependencies, for npm & yarn, it launches "npm run prepub
 When storing the newly dependencies installed, npm-cache can perform a simple copy from the current project
 to the cache directory instead of creating a tar.gz
 
+### No compress
+When storing the newly dependencies installed, npm-cache can create a tar without the gzip step.
+
 ### symbolic link
 Used with the no archive feature, this feature provide the fastest npm install possible. When the dependencies
 have already been cached, it just creates a symbolic link from the current directory to the cached dependencies.
@@ -73,7 +76,8 @@ npm-cache install bower --allow-root composer --dry-run
    npm-cache install --keepItems 3 composer  # purge old composer snapshots, keeping at most 3, then run composer install
    npm-cache install --cacheDirectory /home/cache/ bower    # install components using /home/cache as cache directory
    npm-cache install --forceRefresh  bower  # force installing dependencies from package manager without cache
-   npm-cache install --noArchive npm    # do not compress/archive the cached dependencies
+   npm-cache install --noArchive npm    # do not archive the cached dependencies
+   npm-cache install --noCompress npm    # archive but do not gzip the cached dependencies
    npm-cache install --useSymlink yarn # do not compress the cached dependencies, and when installing dependencies from cache, create a symlink instead of copying files
    npm-cache install --ci npm    # uses npm ci to install dependencies
    npm-cache install npm --production -msvs_version=2013    # add args to npm installer

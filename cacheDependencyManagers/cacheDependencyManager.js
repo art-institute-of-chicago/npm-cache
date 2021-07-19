@@ -234,9 +234,13 @@ CacheDependencyManager.prototype.archiveDependencies = function (cacheDirectory,
       .pipe(fstream.Writer({path: tmpName, type: 'Directory'}));
 
   } else {
-    tar.pack(installedDirectory)
-      .pipe(zlib.createGzip())
-      .pipe(fs.createWriteStream(tmpName))
+    var pipe = tar.pack(installedDirectory);
+
+    if (!this.config.noCompress) {
+      pipe = pipe.pipe(zlib.createGzip());
+    }
+
+    pipe.pipe(fs.createWriteStream(tmpName))
       .on('error', onError)
       .on('finish', onEnd);
   }
@@ -281,9 +285,13 @@ CacheDependencyManager.prototype.installCachedDependencies = function (cachePath
   }
 
   if (compressedCacheExists && !this.config.useSymlink) {
-    fs.createReadStream(cachePath)
-      .pipe(zlib.createGunzip())
-      .pipe(tar.extract(installDirectory))
+    var pipe = fs.createReadStream(cachePath);
+
+    if (!this.config.noCompress) {
+      pipe = pipe.pipe(zlib.createGunzip());
+    }
+
+    pipe.pipe(tar.extract(installDirectory))
       .on('error', onError)
       .on('finish', onEnd);
   } else {
@@ -346,7 +354,7 @@ CacheDependencyManager.prototype.loadDependencies = function (callback) {
   this.cacheLogInfo('hash of ' + this.config.configPath + ': ' + hash);
   // cachePath is absolute path to where local cache of dependencies is located
   var cacheDirectory = path.resolve(this.config.cacheDirectory, this.config.cliName, this.config.getCliVersion());
-  var cachePathArchive = path.resolve(cacheDirectory, hash + '.tar.gz');
+  var cachePathArchive = path.resolve(cacheDirectory, hash + '.tar' + (this.config.noCompress ? '' : '.gz'));
   var cachePathNotArchived = path.resolve(cacheDirectory, hash);
 
   // Remove cached dependencies if there are too many
