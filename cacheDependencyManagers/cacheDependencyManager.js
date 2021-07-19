@@ -5,12 +5,11 @@ var path = require('path');
 var logger = require('../util/logger');
 var shell = require('shelljs');
 var which = require('which');
-var tar = require('tar-fs');
+var tar = require('tar');
 var fstream = require('fstream');
 var md5 = require('../util/md5');
 var tmp = require('tmp');
 var _ = require('lodash');
-var zlib = require('zlib');
 var rimraf = require('rimraf');
 
 var cacheVersion = '1';
@@ -234,15 +233,13 @@ CacheDependencyManager.prototype.archiveDependencies = function (cacheDirectory,
       .pipe(fstream.Writer({path: tmpName, type: 'Directory'}));
 
   } else {
-    var pipe = tar.pack(installedDirectory);
-
-    if (!this.config.noCompress) {
-      pipe = pipe.pipe(zlib.createGzip());
-    }
-
-    pipe.pipe(fs.createWriteStream(tmpName))
-      .on('error', onError)
-      .on('finish', onEnd);
+    tar.create({
+      gzip: !this.config.noCompress,
+      cwd: installedDirectory,
+      file: tmpName,
+      sync: true,
+    }, ['']);
+    onEnd();
   }
 };
 
@@ -285,15 +282,11 @@ CacheDependencyManager.prototype.installCachedDependencies = function (cachePath
   }
 
   if (compressedCacheExists && !this.config.useSymlink) {
-    var pipe = fs.createReadStream(cachePath);
-
-    if (!this.config.noCompress) {
-      pipe = pipe.pipe(zlib.createGunzip());
-    }
-
-    pipe.pipe(tar.extract(installDirectory))
-      .on('error', onError)
-      .on('finish', onEnd);
+    fs.mkdirsSync(installDirectory);
+    tar.extract({
+      file: cachePath,
+      cwd: installDirectory,
+    }).then(onEnd);
   } else {
     if (!this.config.useSymlink) {
       fstream.Reader(cachePath)
